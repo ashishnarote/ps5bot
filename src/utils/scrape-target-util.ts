@@ -3,16 +3,16 @@ import * as notifier from 'node-notifier'
 
 export const scrapeTarget = async (config: { [key: string]: string }) => {
   const {
-    phoneNumber,
-    firstName,
-    lastName,
-    state,
-    city,
-    zipCode,
-    address,
-    creditCardNumber,
-    expirationMonth,
-    expirationYear,
+    // phoneNumber,
+    // firstName,
+    // lastName,
+    // state,
+    // city,
+    // zipCode,
+    // address,
+    // creditCardNumber,
+    // expirationMonth,
+    // expirationYear,
     cvv,
     targetEmail,
     targetPassword
@@ -64,18 +64,18 @@ export const scrapeTarget = async (config: { [key: string]: string }) => {
       console.log("join request doesn't exists")
     }
 
-    await page.goto(
-      'https://www.target.com/p/playstation-5-digital-edition-console/-/A-81114596'
-    )
     // await page.goto(
-    //   'https://www.target.com/p/dualsense-wireless-controller-for-playstation-5/-/A-81114477'
+    //   'https://www.target.com/p/playstation-5-digital-edition-console/-/A-81114596'
     // )
+    await page.goto(
+        'https://www.target.com/p/dualsense-wireless-controller-for-playstation-5-white-black/-/A-81114477'
+    )
 
     await page.waitForTimeout(4000)
 
     while (true) {
       try {
-        await page.waitForSelector('button[data-test="shipItButton"]', {
+        await page.waitForSelector('button[data-test="orderPickupButton"]', {
           timeout: 10000
         })
         break
@@ -84,7 +84,7 @@ export const scrapeTarget = async (config: { [key: string]: string }) => {
       }
     }
 
-    const shipItButton = await page.$('button[data-test="shipItButton"]')
+    const shipItButton = await page.$('button[data-test="orderPickupButton"]')
     await shipItButton.click()
     await page.waitForTimeout(4000)
 
@@ -104,71 +104,81 @@ export const scrapeTarget = async (config: { [key: string]: string }) => {
     await checkoutButton.click()
 
     await page.waitForTimeout(6000)
-    const isCreditCardSavedAttemptOne = await page.$(
-      'button[data-test="verify-card-button"]'
-    )
-    if (isCreditCardSavedAttemptOne) {
-      await page.type('#creditCardInput-cardNumber', creditCardNumber)
-      // expiration date format: MM/YY e.g. 08/24
-      await isCreditCardSavedAttemptOne.click()
-      await page.waitForTimeout(6000)
-      await page.type('#creditCardInput-cvv', cvv)
-      await page.keyboard.press('Enter')
-    } else {
-      // checkout page
-      const existingAddress = await page.$('div[data-test="address-0"]')
-      if (existingAddress) {
-        console.log('address exists')
-        await existingAddress.click()
-        const saveAndContinueButton = await page.$(
-          'button[data-test="save-and-continue-button"]'
-        )
-        await saveAndContinueButton.click()
-      } else {
-        console.log("address doesn't exists")
-        await page.type('#full_name', `${firstName} ${lastName}`)
-        await page.type('#address_line1', address)
-        await page.type('#zip_code', zipCode)
-        await page.type('#city', city)
-        await page.type('#mobile', phoneNumber)
-        await page.select('#state', state)
-        const saveAndContinueButton = await page.$(
-          'button[data-test="saveButton"]'
-        )
-        await saveAndContinueButton.click()
-      }
-      await page.waitForTimeout(6000)
-      await page.type('#creditCardInput-cardNumber', creditCardNumber)
 
-      const isCreditCardSaved = await page.$(
-        'button[data-test="verify-card-button"]'
-      )
-      if (!isCreditCardSaved) {
-        // expiration date format: MM/YY e.g. 08/24
-        await page.type(
-          '#creditCardInput-expiration',
-          `${expirationMonth}/${expirationYear.slice(2, 4)}`
-        )
-        await page.type('#creditCardInput-cvv', cvv)
-        await page.type('#creditCardInput-cardName', `${firstName} ${lastName}`)
-        const saveAndContinueButton = await page.$(
-          'button[data-test="save-and-continue-button"]'
-        )
-        await saveAndContinueButton.click()
-      } else {
-        await isCreditCardSaved.click()
-        await page.waitForTimeout(6000)
+      const isCVValreadythere = await page.$('#creditCardInput-cvv')
+
+    if(isCVValreadythere) {
         await page.type('#creditCardInput-cvv', cvv)
         await page.keyboard.press('Enter')
-      }
     }
+
+
+    // await page.waitForTimeout(6000)
+    // const isCreditCardSavedAttemptOne = await page.$(
+    //   'button[data-test="verify-card-button"]'
+    // )
+    // if (isCreditCardSavedAttemptOne) {
+    //   await page.type('#creditCardInput-cardNumber', creditCardNumber)
+    //   // expiration date format: MM/YY e.g. 08/24
+    //   await isCreditCardSavedAttemptOne.click()
+    //   await page.waitForTimeout(6000)
+    //   await page.type('#creditCardInput-cvv', cvv)
+    //   await page.keyboard.press('Enter')
+    // } else {
+    //   // checkout page
+    //   const existingAddress = await page.$('div[data-test="address-0"]')
+    //   if (existingAddress) {
+    //     console.log('address exists')
+    //     await existingAddress.click()
+    //     const saveAndContinueButton = await page.$(
+    //       'button[data-test="save-and-continue-button"]'
+    //     )
+    //     await saveAndContinueButton.click()
+    //   } else {
+    //     console.log("address doesn't exists")
+    //     await page.type('#full_name', `${firstName} ${lastName}`)
+    //     await page.type('#address_line1', address)
+    //     await page.type('#zip_code', zipCode)
+    //     await page.type('#city', city)
+    //     await page.type('#mobile', phoneNumber)
+    //     await page.select('#state', state)
+    //     const saveAndContinueButton = await page.$(
+    //       'button[data-test="saveButton"]'
+    //     )
+    //     await saveAndContinueButton.click()
+    //   }
+    //   await page.waitForTimeout(6000)
+    //   await page.type('#creditCardInput-cardNumber', creditCardNumber)
+    //
+    //   const isCreditCardSaved = await page.$(
+    //     'button[data-test="verify-card-button"]'
+    //   )
+    //   if (!isCreditCardSaved) {
+    //     // expiration date format: MM/YY e.g. 08/24
+    //     await page.type(
+    //       '#creditCardInput-expiration',
+    //       `${expirationMonth}/${expirationYear.slice(2, 4)}`
+    //     )
+    //     await page.type('#creditCardInput-cvv', cvv)
+    //     await page.type('#creditCardInput-cardName', `${firstName} ${lastName}`)
+    //     const saveAndContinueButton = await page.$(
+    //       'button[data-test="save-and-continue-button"]'
+    //     )
+    //     await saveAndContinueButton.click()
+    //   } else {
+    //     await isCreditCardSaved.click()
+    //     await page.waitForTimeout(6000)
+    //     await page.type('#creditCardInput-cvv', cvv)
+    //     await page.keyboard.press('Enter')
+    //   }
+    // }
 
     notifier.notify({
       title: 'Target',
       message: 'Ready to place order!',
       sound: true
     })
-
+    //
     // await page.waitForTimeout(4000)
     // const placeOrderButton = await page.$(
     //   'button[data-test="placeOrderButton"]'
