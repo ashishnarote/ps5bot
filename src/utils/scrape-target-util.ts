@@ -1,40 +1,25 @@
 import * as puppeteer from 'puppeteer'
 import * as notifier from 'node-notifier'
 
-export const scrapeTarget = async (config: { [key: string]: string }) => {
-  const {
-    // phoneNumber,
-    // firstName,
-    // lastName,
-    // state,
-    // city,
-    // zipCode,
-    // address,
-    // creditCardNumber,
-    // expirationMonth,
-    // expirationYear,
-    cvv,
-    targetEmail,
-    targetPassword
-  } = config
+export const targetReRun = async  () => {
 
-  if (!targetEmail || !targetPassword) {
-    throw new Error(
-      'targetEmail and targetPassword settings not set in config.json'
-    )
-  }
+
 
   const browser = await puppeteer.launch({
-    headless: false,
+    headless: true,
     args: ['--window-size=1920,1080'],
-    defaultViewport: null
+    defaultViewport: null,
+    ignoreDefaultArgs: ['--disable-extensions'],
+    executablePath : '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
   })
+
 
   try {
     const page = await browser.newPage()
     await page.setRequestInterception(true)
+      await page.setDefaultNavigationTimeout(0);
 
-    page.on('request', async req => {
+      page.on('request', async req => {
       if (req.resourceType() === 'image') {
         await req.abort()
       } else {
@@ -42,19 +27,23 @@ export const scrapeTarget = async (config: { [key: string]: string }) => {
       }
     })
 
-    await page.goto('https://www.target.com')
+    await page.goto('https://www.target.com', {
+        waitUntil: 'load',
+        // Remove the timeout
+        timeout: 0
+    })
     const accountDropdown = await page.$('#account')
     await accountDropdown.click()
 
-    await page.waitForTimeout(6000)
+    await page.waitForTimeout(4000)
     const signInButton = await page.$('#accountNav-signIn')
     await signInButton.click()
-    await page.waitForTimeout(6000)
-    await page.type('#username', targetEmail)
-    await page.type('#password', targetPassword)
+    await page.waitForTimeout(4000)
+    await page.type('#username', 'ashish.narote@gmail.com')
+    await page.type('#password', 'Computer@29988')
     await page.keyboard.press('Enter')
 
-    await page.waitForTimeout(6000)
+    await page.waitForTimeout(4000)
     const isJoinRequest = await page.$('#circle-join-free')
     if (isJoinRequest) {
       console.log('join request exists')
@@ -64,27 +53,46 @@ export const scrapeTarget = async (config: { [key: string]: string }) => {
       console.log("join request doesn't exists")
     }
 
-    // await page.goto(
-    //   'https://www.target.com/p/playstation-5-digital-edition-console/-/A-81114596'
-    // )
     await page.goto(
-        'https://www.target.com/p/dualsense-wireless-controller-for-playstation-5-white-black/-/A-81114477'
+      'https://www.target.com/p/playstation-5-console/-/A-81114595', {
+            waitUntil: 'load',
+            // Remove the timeout
+            timeout: 0
+        }
     )
+    // await page.goto(
+    //     'https://www.target.com/p/dualsense-wireless-controller-for-playstation-5-white-black/-/A-81114477'
+    // )
 
     await page.waitForTimeout(4000)
+      let i = 0;
+    do {
+      i++
+        console.log(i)
+        try {
+            await await page.waitForSelector('div[data-test="soldOutBlock"]', {
+                timeout: 4000
+            })
 
-    while (true) {
+        } catch (error) {
+            console.log("Sold Out not found")
+            console.log(error)
+            await page.reload()
+        }
       try {
         await page.waitForSelector('button[data-test="orderPickupButton"]', {
-          timeout: 10000
+          timeout: 4000
         })
         break
       } catch (error) {
+
         await page.reload()
       }
-    }
+    }while (i < 5);
+      await browser.close();
 
-    const shipItButton = await page.$('button[data-test="orderPickupButton"]')
+
+      const shipItButton = await page.$('button[data-test="orderPickupButton"]')
     await shipItButton.click()
     await page.waitForTimeout(4000)
 
@@ -99,94 +107,46 @@ export const scrapeTarget = async (config: { [key: string]: string }) => {
     )
     await addToCartModalViewCartCheckout.click()
 
-    await page.waitForTimeout(6000)
+    await page.waitForTimeout(4000)
     const checkoutButton = await page.$('button[data-test="checkout-button"]')
     await checkoutButton.click()
 
-    await page.waitForTimeout(6000)
+    await page.waitForTimeout(4000)
 
       const isCVValreadythere = await page.$('#creditCardInput-cvv')
 
     if(isCVValreadythere) {
-        await page.type('#creditCardInput-cvv', cvv)
+        await page.type('#creditCardInput-cvv', '835')
         await page.keyboard.press('Enter')
     }
 
-
-    // await page.waitForTimeout(6000)
-    // const isCreditCardSavedAttemptOne = await page.$(
-    //   'button[data-test="verify-card-button"]'
-    // )
-    // if (isCreditCardSavedAttemptOne) {
-    //   await page.type('#creditCardInput-cardNumber', creditCardNumber)
-    //   // expiration date format: MM/YY e.g. 08/24
-    //   await isCreditCardSavedAttemptOne.click()
-    //   await page.waitForTimeout(6000)
-    //   await page.type('#creditCardInput-cvv', cvv)
-    //   await page.keyboard.press('Enter')
-    // } else {
-    //   // checkout page
-    //   const existingAddress = await page.$('div[data-test="address-0"]')
-    //   if (existingAddress) {
-    //     console.log('address exists')
-    //     await existingAddress.click()
-    //     const saveAndContinueButton = await page.$(
-    //       'button[data-test="save-and-continue-button"]'
-    //     )
-    //     await saveAndContinueButton.click()
-    //   } else {
-    //     console.log("address doesn't exists")
-    //     await page.type('#full_name', `${firstName} ${lastName}`)
-    //     await page.type('#address_line1', address)
-    //     await page.type('#zip_code', zipCode)
-    //     await page.type('#city', city)
-    //     await page.type('#mobile', phoneNumber)
-    //     await page.select('#state', state)
-    //     const saveAndContinueButton = await page.$(
-    //       'button[data-test="saveButton"]'
-    //     )
-    //     await saveAndContinueButton.click()
-    //   }
-    //   await page.waitForTimeout(6000)
-    //   await page.type('#creditCardInput-cardNumber', creditCardNumber)
-    //
-    //   const isCreditCardSaved = await page.$(
-    //     'button[data-test="verify-card-button"]'
-    //   )
-    //   if (!isCreditCardSaved) {
-    //     // expiration date format: MM/YY e.g. 08/24
-    //     await page.type(
-    //       '#creditCardInput-expiration',
-    //       `${expirationMonth}/${expirationYear.slice(2, 4)}`
-    //     )
-    //     await page.type('#creditCardInput-cvv', cvv)
-    //     await page.type('#creditCardInput-cardName', `${firstName} ${lastName}`)
-    //     const saveAndContinueButton = await page.$(
-    //       'button[data-test="save-and-continue-button"]'
-    //     )
-    //     await saveAndContinueButton.click()
-    //   } else {
-    //     await isCreditCardSaved.click()
-    //     await page.waitForTimeout(6000)
-    //     await page.type('#creditCardInput-cvv', cvv)
-    //     await page.keyboard.press('Enter')
-    //   }
-    // }
 
     notifier.notify({
       title: 'Target',
       message: 'Ready to place order!',
       sound: true
     })
-    //
-    // await page.waitForTimeout(4000)
-    // const placeOrderButton = await page.$(
-    //   'button[data-test="placeOrderButton"]'
-    // )
-    // await placeOrderButton.click()
+
+    await page.waitForTimeout(4000)
+    const placeOrderButton = await page.$(
+      'button[data-test="placeOrderButton"]'
+    )
+    await placeOrderButton.click()
   } catch (error) {
+    throw new Error()
     console.log(error)
   } finally {
-    // await browser.close();
+     await browser.close();
   }
 }
+
+export const scrapeTarget = async () => {
+    targetReRun()
+        .catch((error) => {
+          console.log(error)
+            console.log('failure, retry');
+            setTimeout(scrapeTarget, 3 * 1000); // 5 minutes
+        });
+};
+console.log('start');
+//scrapeTarget();
